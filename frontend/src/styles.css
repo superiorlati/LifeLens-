@@ -1,0 +1,118 @@
+/* frontend/src/styles.css — pastel theme, rounded bubbly font, animations */
+
+/* theme colors (pastel, soft) */
+:root{
+  --bg: #f8fafb;            /* very light */
+  --card: #ffffff;
+  --muted: #6b7280;
+  --accent: #7c57f6;        /* soft purple */
+  --accent-2: #60a5fa;      /* soft blue */
+  --soft: #f3e8ff;          /* lilac tint */
+  --success: #34d399;
+  --danger: #ef4444;
+  --glass: rgba(255,255,255,0.6);
+  --shadow: 0 10px 30px rgba(20,24,50,0.06);
+}
+
+/* global */
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+  font-family: "Baloo 2", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg, #fbfbff 0%, #f8fafb 100%);
+  margin:0;
+  color:#0f172a;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  padding:28px;
+}
+
+/* layout */
+.container{max-width:980px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.header h1{margin:0;font-size:1.8rem;letter-spacing:0.2px}
+.small{font-size:0.86rem;color:var(--muted)}
+.card{
+  background: linear-gradient(180deg, var(--card), #fbfbff);
+  padding:18px;border-radius:18px;box-shadow:var(--shadow);margin-bottom:16px;
+  border: 1px solid rgba(124,87,246,0.06);
+}
+
+/* form elements */
+.input{width:100%;padding:10px;border-radius:12px;border:1px solid #eef2ff;margin-top:8px;background:transparent}
+.button{
+  background:var(--accent);color:white;padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:700;
+  box-shadow: 0 6px 18px rgba(124,87,246,0.12);
+}
+.button.secondary{background:var(--accent-2)}
+.button.ghost{background:transparent;color:var(--accent);border:1px solid rgba(124,87,246,0.12)}
+.persona{display:inline-block;padding:6px 10px;border-radius:999px;background:#f0eefb;color:var(--accent);font-weight:700}
+
+/* habit list */
+.habit{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;border:1px solid #f0f4ff;margin-bottom:8px}
+
+/* nudge */
+.nudge{border-left:6px solid var(--success);padding:14px;background:#f7fffa;border-radius:12px}
+
+/* pet playroom area */
+.playroom{
+  display:flex;
+  align-items:flex-start;
+  gap:18px;
+  padding:12px;
+  border-radius:14px;
+  background: linear-gradient(180deg, #fff8f3, #fff);
+  border: 1px solid rgba(96,165,250,0.06);
+}
+
+.pet-stage{
+  width:240px;height:180px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff);
+  display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border:1px solid rgba(15,23,42,0.03)
+}
+
+/* toy and food icons */
+.reward{
+  position:absolute;bottom:12px;left:12px;font-size:18px;opacity:0.95;
+  background:rgba(255,255,255,0.7);padding:6px;border-radius:8px;border:1px solid rgba(0,0,0,0.03)
+}
+
+/* pet emoji */
+.pet-emoji{font-size:72px;transition:transform 300ms ease, filter 300ms ease;display:inline-block}
+.pet-emoji.bounce{animation:pet-bounce 700ms ease}
+.pet-emoji.spin{animation:pet-spin 800ms linear}
+.pet-emoji.jump{animation:pet-jump 600ms cubic-bezier(.2,.8,.2,1)}
+.pet-emoji.loaf{transform:scale(0.98);filter:grayscale(0.02)}
+
+/* small status */
+.pet-status{margin-top:8px;font-weight:700;color:var(--muted)}
+
+/* keyframes */
+@keyframes pet-bounce {
+  0%{transform:translateY(0)}
+  30%{transform:translateY(-18px)}
+  60%{transform:translateY(0)}
+  100%{transform:translateY(0)}
+}
+@keyframes pet-spin {
+  0%{transform:rotate(0deg)}
+  100%{transform:rotate(360deg)}
+}
+@keyframes pet-jump {
+  0%{transform:translateY(0)}
+  40%{transform:translateY(-30px)}
+  80%{transform:translateY(6px)}
+  100%{transform:translateY(0)}
+}
+
+/* play buttons */
+.play-controls{display:flex;flex-direction:column;gap:8px}
+.control-row{display:flex;gap:8px;align-items:center}
+
+/* breed grid */
+.breed-grid{display:flex;gap:12px;align-items:center;justify-content:center}
+.breed-card{cursor:pointer;border-radius:12px;padding:8px;border:2px solid transparent;text-align:center}
+.breed-card.selected{border-color:rgba(124,87,246,0.18);box-shadow:0 8px 20px rgba(124,87,246,0.06);background:var(--soft)}
+
+/* music control */
+.music-bar{display:flex;align-items:center;gap:8px}
+.music-button{background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px;border-radius:8px}

@@ -1,0 +1,7 @@
+fastapi==0.95.2
+uvicorn[standard]==0.22.0
+scikit-learn==1.2.2
+numpy==1.25.0
+python-multipart==0.0.6
+pydantic==1.10.9
+aiofiles==23.2.1
