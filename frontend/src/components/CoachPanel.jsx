@@ -44,7 +44,8 @@ export default function CoachPanel({ user, petType, onOpen, onRefresh }) {
       const recent = logs.slice(-lookback);
       const successes = recent.filter(l => Number(l.success) === 1).length;
       return successes / Math.max(1, recent.length);
-    } catch {
+    } catch (err) {
+      console.error("computeSuccessRate error", err);
       return 0;
     }
   }
@@ -61,6 +62,12 @@ export default function CoachPanel({ user, petType, onOpen, onRefresh }) {
       social: { prefix: "Team-up idea — ", suffix: " (invite someone!)" },
       student: { prefix: "Study tip — ", suffix: " (break it into 20-min sprints)" },
       night_owl: { prefix: "Night mode — ", suffix: " (try a gentle wind-down routine)" },
+      neutral: { prefix: "", suffix: "" },
+      kind: { prefix: "Kind nudge — ", suffix: " (you’re doing great!)" },
+      harsh: { prefix: "Tough love — ", suffix: " (no excuses!)" },
+      playful: { prefix: "Playful idea — ", suffix: " (make it fun!)" },
+      analytical: { prefix: "Data-driven — ", suffix: " (track and iterate!)" },
+      inspirational: { prefix: "Inspiration — ", suffix: " (you've got this!)" },
     }[persona] || { prefix: "", suffix: "" };
 
     // Writing / storytelling
@@ -98,6 +105,13 @@ export default function CoachPanel({ user, petType, onOpen, onRefresh }) {
       return `${tone.prefix}You're consistent — consider a longer session or body-scan.${tone.suffix}`;
     }
 
+    // Social / accountability
+    if (name.includes("talk") || name.includes("call") || name.includes("share") || name.includes("group")) {
+      if (successRate < 0.25) return `${tone.prefix}Reach out to one person and set a short check-in — accountability helps.${tone.suffix}`;
+      if (successRate < 0.6) return `${tone.prefix}You're on track — try scheduling a weekly buddy check-in.${tone.suffix}`;
+      return `${tone.prefix}Great teamwork — consider leading a short group session this week.${tone.suffix}`;
+    }
+
     // Default guidance
     if (successRate < 0.25) return `${tone.prefix}Start with one tiny action today — consistency matters more than intensity.${tone.suffix}`;
     if (successRate < 0.6) return `${tone.prefix}You're making progress — celebrate small wins and keep the momentum going.${tone.suffix}`;
@@ -125,7 +139,8 @@ export default function CoachPanel({ user, petType, onOpen, onRefresh }) {
             const r = await apiGet(`/predict?user_id=${user.id}&habit_id=${h.id}`);
             const successRate = await computeSuccessRate(user.id, h.id);
             return { habit: h, ...r, success_rate: successRate };
-          } catch {
+          } catch (err) {
+            console.warn("predict/log fetch error for habit", h.id, err);
             const successRate = await computeSuccessRate(user.id, h.id).catch(()=>0);
             return { habit: h, message: "", probability: 0.5, success_rate: successRate };
           }
@@ -241,7 +256,7 @@ export default function CoachPanel({ user, petType, onOpen, onRefresh }) {
                   <div className="small">At-risk habit</div>
                   <div style={{ fontSize: "1.05rem", fontWeight: 700 }}>{riskInfo.habit.name}</div>
                   <div className="small">Confidence: {(riskInfo.probability * 100).toFixed(0)}%</div>
-                  <div className="small">Recent success rate: {( (riskInfo.success_rate || 0) * 100 ).toFixed(0)}%</div>
+                  <div className="small">Recent success rate: {(((riskInfo.success_rate || 0) * 100)).toFixed(0)}%</div>
                 </div>
 
                 <div style={{ textAlign: "right" }}>
@@ -281,8 +296,8 @@ export default function CoachPanel({ user, petType, onOpen, onRefresh }) {
         <div className={`coach-modal ${mood}`}>
           <div className="confetti" />
           <div className="coach-modal-content">
-            <div className="pet-emoji">{petEmoji}</div>
-            <div className="coach-message">
+            <div className="pet-emoji" style={{ fontSize: 48 }}>{petEmoji}</div>
+            <div className="coach-message" style={{ marginTop: 8 }}>
               {mood === "happy"
                 ? "Your pet is bursting with joy! 🎉"
                 : "Your pet looks a bit down — try again soon 💕"}
@@ -293,3 +308,9 @@ export default function CoachPanel({ user, petType, onOpen, onRefresh }) {
     </div>
   );
 }
+
+
+
+
+
+
