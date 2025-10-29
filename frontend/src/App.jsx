@@ -7,20 +7,35 @@ import CoachPanel from "./components/CoachPanel";
 import AvatarPicker from "./components/AvatarPicker";
 import PetPanel from "./components/PetPanel";
 import PersonaBadge from "./components/PersonaBadge";
+import PersonaSetup from "./components/PersonaSetup"; // new: onboarding persona selector
+import JournalPanel from "./components/JournalPanel"; // new: journaling / voice notes
+import GroupPanel from "./components/GroupPanel"; // new: group accountability view
 import { apiGet } from "./api";
 import "./index.css";
 
 /**
  * LifeLens – Study Bunny–style gamified habit companion
+ *
  * Pages:
- *  - onboard: create user → pick pet
+ *  - onboard: create user → pick persona → pick pet
  *  - dashboard: habit & nudge view
  *  - playroom: interactive pet view
+ *  - journal: write / voice journaling
+ *  - groups: group accountability
+ *
+ * This file preserves ALL existing features the app had previously
+ * (habit fetching, logging hooks, playroom, coach panel, audio toggle, etc.)
+ * while adding:
+ *  - persona selection at onboarding (and editable in-settings via header)
+ *  - journal & group panels accessible from dashboard
+ *  - mood state driving background color and pet emotion
+ *  - place to toggle background music (audio element expected in public/assets)
  */
+
 export default function App() {
-  const [page, setPage] = useState("onboard"); // onboard, dashboard, playroom
+  const [page, setPage] = useState("onboard"); // onboard, dashboard, playroom, journal, groups
   const [user, setUser] = useState(null); // { id, name, persona }
-  const [pet, setPet] = useState(null);   // { type }
+  const [pet, setPet] = useState(null); // { type }
   const [habits, setHabits] = useState([]);
   const [selectedHabit, setSelectedHabit] = useState(null);
 
@@ -28,24 +43,34 @@ export default function App() {
   const [food, setFood] = useState(0);
   const [toys, setToys] = useState(0);
   const [dailyStatus, setDailyStatus] = useState({}); // habitId -> true/false
-  const [mood, setMood] = useState("calm"); // sync with pet mood (calm|happy|sad)
+
+  // persona & mood
+  const [persona, setPersona] = useState(null); // string like 'kind','playful','analytical', etc.
+  const [mood, setMood] = useState("calm"); // calm | happy | sad | excited
   const audioRef = useRef(null);
 
-  /** ─────────────────────────────
-   *  Data Fetching & Daily Logic
-   *  ───────────────────────────── */
-  const fetchHabits = useCallback(async (u = user) => {
-    if (!u) return;
-    try {
-      const res = await apiGet(`/habits?user_id=${u.id}`);
-      setHabits(res.habits || []);
-    } catch (e) {
-      console.error("Error fetching habits", e);
-    }
-  }, [user]);
+  /** -----------------------
+   * Data fetching & helpers
+   * ----------------------- */
+  const fetchHabits = useCallback(
+    async (u = user) => {
+      if (!u) return;
+      try {
+        const res = await apiGet(`/habits?user_id=${u.id}`);
+        setHabits(res.habits || []);
+      } catch (e) {
+        console.error("Error fetching habits", e);
+      }
+    },
+    [user]
+  );
 
   useEffect(() => {
-    if (user) fetchHabits();
+    if (user) {
+      fetchHabits();
+      // if user already has persona on record, sync
+      if (user.persona) setPersona(user.persona);
+    }
   }, [user, fetchHabits]);
 
   async function habitCompletedToday(userId, habitId) {
@@ -79,15 +104,16 @@ export default function App() {
       setToys((t) => t + 1);
       setMood("happy");
     } else if (ids.some((id) => !status[id])) {
+      // If any missing -> gentle sad nudge
       setMood("sad");
     } else {
       setMood("calm");
     }
   }
 
-  /** ─────────────────────────────
-   *  Event Handlers
-   *  ───────────────────────────── */
+  /** -----------------------
+   * Event handlers
+   * ----------------------- */
   function onHabitLoggedSuccess() {
     setFood((f) => f + 1);
     fetchHabits();
@@ -105,14 +131,23 @@ export default function App() {
   }
 
   function handleUserCreated(newUser) {
+    // newUser may not include persona yet; persona setup follows
     setUser(newUser);
-    setPage("onboard"); // next step: pick pet
+    // if user doesn't have persona, remain on onboarding to pick persona & pet
+    setPage("onboard");
+  }
+
+  function handlePersonaChosen(chosenPersona) {
+    setPersona(chosenPersona);
+    // persist to user object (frontend-only; backend sync can be done separately)
+    setUser((u) => (u ? { ...u, persona: chosenPersona } : { persona: chosenPersona }));
   }
 
   function handlePetChosen(petObj) {
-    // petObj expected like { type: "dog" } from AvatarPicker
+    // expected petObj: { type: 'dog' | 'cat' | 'rabbit' | ... }
     setPet(petObj);
     setPage("dashboard");
+    // small delay so habits can load then evaluate mood
     setTimeout(recomputeDailyStatus, 400);
   }
 
@@ -131,27 +166,43 @@ export default function App() {
     setFood(0);
     setToys(0);
     setDailyStatus({});
-    setPage("onboard");
+    setPersona(null);
     setMood("calm");
+    setPage("onboard");
   }
 
+  // run recompute when entering dashboard or when habits change
   useEffect(() => {
     if (page === "dashboard") recomputeDailyStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, habits]);
 
-  /** ─────────────────────────────
-   *  Mood-based background colors
-   *  ───────────────────────────── */
+  /** -----------------------
+   * UI helpers: mood -> background
+   * ----------------------- */
   const moodColors = {
     calm: "#f0f4ff",
     happy: "#fff9d6",
     sad: "#f8e4e4",
+    excited: "#d9ffec",
   };
 
-  /** ─────────────────────────────
-   *  Render Logic
-   *  ───────────────────────────── */
+  /** -----------------------
+   * Header controls
+   * ----------------------- */
+  const HeaderRightControls = () => (
+    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <button className="button ghost" onClick={toggleMusic}>🎷 Music</button>
+      {user && <button className="button ghost" onClick={() => setPage("journal")}>Journal</button>}
+      {user && <button className="button ghost" onClick={() => setPage("groups")}>Groups</button>}
+      {user && <button className="button ghost" onClick={() => setPage("playroom")}>Playroom</button>}
+      {user && <button className="button" onClick={logout}>Logout</button>}
+    </div>
+  );
+
+  /** -----------------------
+   * Render
+   * ----------------------- */
   return (
     <div
       className="container"
@@ -162,35 +213,59 @@ export default function App() {
         transition: "background 0.35s ease",
       }}
     >
+      {/* background music audio element (place your file in public/assets if using) */}
+      <audio id="bg-music" src="/assets/jazz-loop.mp3" loop preload="auto" />
+
       <div className="header">
         <div>
           <h1>LifeLens</h1>
           <div className="small">Persona-aware nudges • Habit companion</div>
+          {user && persona && (
+            <div className="small">
+              Persona: <PersonaBadge persona={persona} />
+            </div>
+          )}
         </div>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button className="button ghost" onClick={toggleMusic}>🎷 Music</button>
-          {user && <button className="button ghost" onClick={() => setPage("playroom")}>Playroom</button>}
-          {user && <button className="button" onClick={logout}>Logout</button>}
-        </div>
+        <HeaderRightControls />
       </div>
 
-      {/* Onboarding */}
+      {/* -------------------- ONBOARD -------------------- */}
       {page === "onboard" && (
         <>
           {!user ? (
-            <div className="card"><CreateUser onCreated={handleUserCreated} /></div>
-          ) : (
+            <div className="card">
+              <CreateUser onCreated={handleUserCreated} />
+            </div>
+          ) : !persona ? (
+            // If user exists but hasn't chosen persona yet — prompt
+            <div className="card">
+              <h3>Choose your coaching persona</h3>
+              <div className="small">Pick a tone that suits how you want feedback delivered.</div>
+              <div style={{ marginTop: 12 }}>
+                <PersonaSetup onChoose={(p) => handlePersonaChosen(p)} />
+              </div>
+            </div>
+          ) : !pet ? (
+            // After persona selected, pick pet
             <div className="card">
               <h3>Choose a companion</h3>
               <div className="small">Pick your virtual friend to begin your journey.</div>
-              <AvatarPicker onSelect={handlePetChosen} />
+              <div style={{ marginTop: 12 }}>
+                <AvatarPicker onSelect={handlePetChosen} />
+              </div>
+            </div>
+          ) : (
+            // Fallback: if everything selected, go to dashboard
+            <div className="card">
+              <div className="small">All set — heading to your dashboard.</div>
+              <button className="button" onClick={() => setPage("dashboard")}>Open Dashboard</button>
             </div>
           )}
         </>
       )}
 
-      {/* Dashboard */}
+      {/* -------------------- DASHBOARD -------------------- */}
       {page === "dashboard" && user && (
         <>
           <div className="card">
@@ -198,14 +273,33 @@ export default function App() {
               <div>
                 <strong>Welcome, {user.name}</strong>
                 <div className="small">
-                  Persona: <PersonaBadge persona={user.persona} /> • Food: {food} 🍖 • Toys: {toys} 🧸
+                  Persona: <PersonaBadge persona={persona || user.persona} /> • Food: {food} 🍖 • Toys: {toys} 🧸
                 </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {/* quick persona edit */}
+                <button
+                  className="button ghost"
+                  onClick={() => {
+                    // let them change persona quickly (re-open persona setup inline)
+                    setPersona(null);
+                    setPage("onboard");
+                  }}
+                >
+                  Edit Persona
+                </button>
               </div>
             </div>
           </div>
 
           <div className="card">
-            <CoachPanel user={user} petType={pet} onOpen={(h) => setSelectedHabit(h)} onRefresh={handleLogFromPanels} />
+            <CoachPanel
+              user={user}
+              petType={pet}
+              onOpen={(h) => setSelectedHabit(h)}
+              onRefresh={handleLogFromPanels}
+            />
           </div>
 
           <div className="card">
@@ -233,13 +327,14 @@ export default function App() {
 
             <div className="card">
               <h3>Your Companion</h3>
+              {/* PetPanel will display emoji pet and react based on props */}
               <PetPanel petType={pet} completedHabits={food} toys={toys} />
             </div>
           </div>
         </>
       )}
 
-      {/* Playroom */}
+      {/* -------------------- PLAYROOM -------------------- */}
       {page === "playroom" && user && pet && (
         <div className="card">
           <h2>Playroom</h2>
@@ -260,6 +355,38 @@ export default function App() {
                 <button className="button ghost" onClick={() => setPage("dashboard")}>Back to Dashboard</button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* -------------------- JOURNAL -------------------- */}
+      {page === "journal" && user && (
+        <div className="card">
+          <h2>Journal</h2>
+          <div className="small">Write a quick entry or record a short voice note — LifeLens will analyze mood and adapt suggestions.</div>
+          <div style={{ marginTop: 12 }}>
+            <JournalPanel
+              user={user}
+              persona={persona}
+              onInsight={(insight) => {
+                // journal returned insight could influence mood/persona suggestions
+                if (insight?.mood === "distressed") {
+                  setMood("sad");
+                }
+              }}
+              onDone={() => setPage("dashboard")}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* -------------------- GROUPS -------------------- */}
+      {page === "groups" && user && (
+        <div className="card">
+          <h2>Accountability Groups</h2>
+          <div className="small">Join groups working on similar habits to stay motivated together.</div>
+          <div style={{ marginTop: 12 }}>
+            <GroupPanel user={user} habits={habits} onBack={() => setPage("dashboard")} />
           </div>
         </div>
       )}
