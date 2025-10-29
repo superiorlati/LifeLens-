@@ -1,118 +1,338 @@
-/* frontend/src/styles.css — pastel theme, rounded bubbly font, animations */
+/* frontend/src/styles.css — next-gen pastel UI, soft motion design, theme support, adaptive playroom */
 
-/* theme colors (pastel, soft) */
+/* =========================================
+
+Root variables & themes
+========================================= */
 :root{
-  --bg: #f8fafb;            /* very light */
-  --card: #ffffff;
-  --muted: #6b7280;
-  --accent: #7c57f6;        /* soft purple */
-  --accent-2: #60a5fa;      /* soft blue */
-  --soft: #f3e8ff;          /* lilac tint */
-  --success: #34d399;
-  --danger: #ef4444;
-  --glass: rgba(255,255,255,0.6);
-  --shadow: 0 10px 30px rgba(20,24,50,0.06);
+--bg: #f8fafb;
+--card: #ffffff;
+--muted: #6b7280;
+--accent: #7c57f6;
+--accent-2: #60a5fa;
+--soft: #f3e8ff;
+--success: #34d399;
+--danger: #ef4444;
+--glass: rgba(255,255,255,0.6);
+--shadow: 0 10px 30px rgba(20,24,50,0.06);
+--progress: linear-gradient(90deg, var(--accent), var(--accent-2));
+--bg-gradient: linear-gradient(180deg, #fbfbff 0%, #f8fafb 100%);
 }
 
-/* global */
+/* dark mode */
+[data-theme="dark"]{
+--bg: #0f172a;
+--card: #1e293b;
+--muted: #94a3b8;
+--accent: #a78bfa;
+--accent-2: #38bdf8;
+--soft: #312e81;
+--glass: rgba(30,41,59,0.6);
+--shadow: 0 10px 30px rgba(0,0,0,0.25);
+--bg-gradient: linear-gradient(180deg, #1e293b, #0f172a);
+}
+
+/* =========================================
+2. Base & layout
+========================================= */
 *{box-sizing:border-box}
-html,body,#root{height:100%}
+html,body,#root{height:100%;scroll-behavior:smooth}
 body{
-  font-family: "Baloo 2", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  background: linear-gradient(180deg, #fbfbff 0%, #f8fafb 100%);
-  margin:0;
-  color:#0f172a;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  padding:28px;
+font-family: "Baloo 2", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+background: var(--bg-gradient);
+margin:0;
+color:#0f172a;
+-webkit-font-smoothing:antialiased;
+-moz-osx-font-smoothing:grayscale;
+padding:28px;
+transition: background 0.6s ease, color 0.4s ease;
 }
 
-/* layout */
-.container{max-width:980px;margin:0 auto}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.header h1{margin:0;font-size:1.8rem;letter-spacing:0.2px}
+.container{
+max-width:980px;
+margin:0 auto;
+animation: fade-in 0.6s ease both;
+}
+
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+.header h1{
+margin:0;
+font-size:1.8rem;
+letter-spacing:0.2px;
+background:var(--progress);
+-webkit-background-clip:text;
+color:transparent;
+}
 .small{font-size:0.86rem;color:var(--muted)}
+
+/* =========================================
+3. Cards & containers
+========================================= */
 .card{
-  background: linear-gradient(180deg, var(--card), #fbfbff);
-  padding:18px;border-radius:18px;box-shadow:var(--shadow);margin-bottom:16px;
-  border: 1px solid rgba(124,87,246,0.06);
+background: linear-gradient(180deg, var(--card), #fbfbff);
+padding:18px;
+border-radius:18px;
+box-shadow:var(--shadow);
+margin-bottom:16px;
+border:1px solid rgba(124,87,246,0.06);
+backdrop-filter: blur(12px);
+transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover{
+transform: translateY(-3px);
+box-shadow: 0 12px 30px rgba(124,87,246,0.12);
 }
 
-/* form elements */
-.input{width:100%;padding:10px;border-radius:12px;border:1px solid #eef2ff;margin-top:8px;background:transparent}
+/* =========================================
+4. Forms & buttons
+========================================= */
+.input{
+width:100%;
+padding:10px;
+border-radius:12px;
+border:1px solid #eef2ff;
+margin-top:8px;
+background:transparent;
+transition:border-color 0.25s;
+}
+.input:focus{
+border-color:var(--accent);
+outline:none;
+box-shadow:0 0 0 3px rgba(124,87,246,0.1);
+}
+
 .button{
-  background:var(--accent);color:white;padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:700;
-  box-shadow: 0 6px 18px rgba(124,87,246,0.12);
+background:var(--accent);
+color:white;
+padding:10px 14px;
+border-radius:12px;
+border:0;
+cursor:pointer;
+font-weight:700;
+box-shadow:0 6px 18px rgba(124,87,246,0.12);
+transition:transform 0.15s ease, box-shadow 0.3s ease;
 }
+.button:hover{transform:scale(1.04)}
 .button.secondary{background:var(--accent-2)}
-.button.ghost{background:transparent;color:var(--accent);border:1px solid rgba(124,87,246,0.12)}
-.persona{display:inline-block;padding:6px 10px;border-radius:999px;background:#f0eefb;color:var(--accent);font-weight:700}
+.button.ghost{
+background:transparent;
+color:var(--accent);
+border:1px solid rgba(124,87,246,0.12);
+}
+.button.glow{
+background:var(--progress);
+animation: pulse-glow 2.2s infinite;
+box-shadow:0 0 20px rgba(124,87,246,0.4);
+}
 
-/* habit list */
-.habit{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;border:1px solid #f0f4ff;margin-bottom:8px}
+/* persona badge */
+.persona{
+display:inline-block;
+padding:6px 10px;
+border-radius:999px;
+background:#f0eefb;
+color:var(--accent);
+font-weight:700;
+}
 
-/* nudge */
-.nudge{border-left:6px solid var(--success);padding:14px;background:#f7fffa;border-radius:12px}
+/* =========================================
+5. Habit & nudge sections
+========================================= */
+.habit{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:12px;
+border-radius:12px;
+border:1px solid #f0f4ff;
+margin-bottom:8px;
+position:relative;
+overflow:hidden;
+}
+.habit::after{
+content:"";
+position:absolute;
+left:0;bottom:0;
+height:4px;width:var(--progress-percent,0%);
+background:var(--progress);
+border-bottom-right-radius:8px;
+border-top-right-radius:8px;
+transition:width 0.5s ease;
+}
+.nudge{
+border-left:6px solid var(--success);
+padding:14px;
+background:#f7fffa;
+border-radius:12px;
+position:relative;
+}
+.nudge::before{
+content:"💡";
+position:absolute;
+left:8px;
+top:8px;
+font-size:20px;
+}
 
-/* pet playroom area */
+/* =========================================
+6. Playroom & pet area
+========================================= */
 .playroom{
-  display:flex;
-  align-items:flex-start;
-  gap:18px;
-  padding:12px;
-  border-radius:14px;
-  background: linear-gradient(180deg, #fff8f3, #fff);
-  border: 1px solid rgba(96,165,250,0.06);
+display:flex;
+flex-wrap:wrap;
+align-items:flex-start;
+gap:18px;
+padding:12px;
+border-radius:14px;
+background:linear-gradient(180deg,#fff8f3,#fff);
+border:1px solid rgba(96,165,250,0.06);
+animation: fade-in 1s ease;
 }
 
 .pet-stage{
-  width:240px;height:180px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff);
-  display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border:1px solid rgba(15,23,42,0.03)
+width:240px;
+height:180px;
+border-radius:12px;
+background:linear-gradient(180deg,#fff,#fbfdff);
+display:flex;
+align-items:center;
+justify-content:center;
+position:relative;
+overflow:hidden;
+border:1px solid rgba(15,23,42,0.03);
 }
 
-/* toy and food icons */
+/* rewards (toys, food) */
 .reward{
-  position:absolute;bottom:12px;left:12px;font-size:18px;opacity:0.95;
-  background:rgba(255,255,255,0.7);padding:6px;border-radius:8px;border:1px solid rgba(0,0,0,0.03)
+position:absolute;
+bottom:12px;
+left:12px;
+font-size:18px;
+opacity:0.95;
+background:rgba(255,255,255,0.7);
+padding:6px;
+border-radius:8px;
+border:1px solid rgba(0,0,0,0.03);
 }
 
-/* pet emoji */
-.pet-emoji{font-size:72px;transition:transform 300ms ease, filter 300ms ease;display:inline-block}
+/* pet emoji animations */
+.pet-emoji{
+font-size:72px;
+transition:transform 300ms ease, filter 300ms ease;
+display:inline-block;
+}
 .pet-emoji.bounce{animation:pet-bounce 700ms ease}
 .pet-emoji.spin{animation:pet-spin 800ms linear}
 .pet-emoji.jump{animation:pet-jump 600ms cubic-bezier(.2,.8,.2,1)}
 .pet-emoji.loaf{transform:scale(0.98);filter:grayscale(0.02)}
+.pet-emoji.happy{filter:drop-shadow(0 0 6px var(--accent-2)) saturate(1.2)}
 
-/* small status */
-.pet-status{margin-top:8px;font-weight:700;color:var(--muted)}
+/* pet status */
+.pet-status{
+margin-top:8px;
+font-weight:700;
+color:var(--muted);
+text-align:center;
+}
 
-/* keyframes */
+/* =========================================
+7. Controls & breed grid
+========================================= */
+.play-controls{display:flex;flex-direction:column;gap:8px}
+.control-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.breed-grid{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+.breed-card{
+cursor:pointer;
+border-radius:12px;
+padding:8px;
+border:2px solid transparent;
+text-align:center;
+transition:transform 0.25s ease;
+}
+.breed-card:hover{transform:scale(1.04)}
+.breed-card.selected{
+border-color:rgba(124,87,246,0.18);
+box-shadow:0 8px 20px rgba(124,87,246,0.06);
+background:var(--soft);
+}
+
+/* =========================================
+8. Music control & progress bar
+========================================= */
+.music-bar{
+display:flex;
+align-items:center;
+gap:8px;
+margin-top:6px;
+}
+.music-button{
+background:transparent;
+border:1px solid rgba(0,0,0,0.06);
+padding:8px;
+border-radius:8px;
+cursor:pointer;
+transition:transform 0.2s;
+}
+.music-button:hover{transform:scale(1.1)}
+
+.progress-ring{
+width:100%;
+height:6px;
+border-radius:6px;
+background:#e0e7ff;
+overflow:hidden;
+position:relative;
+}
+.progress-ring::after{
+content:"";
+position:absolute;
+left:0;top:0;
+height:100%;
+width:var(--progress-percent,0%);
+background:var(--progress);
+transition:width 0.5s ease;
+}
+
+/* =========================================
+9. Animations
+========================================= */
 @keyframes pet-bounce {
-  0%{transform:translateY(0)}
-  30%{transform:translateY(-18px)}
-  60%{transform:translateY(0)}
-  100%{transform:translateY(0)}
+0%{transform:translateY(0)}
+30%{transform:translateY(-18px)}
+60%{transform:translateY(0)}
+100%{transform:translateY(0)}
 }
 @keyframes pet-spin {
-  0%{transform:rotate(0deg)}
-  100%{transform:rotate(360deg)}
+0%{transform:rotate(0deg)}
+100%{transform:rotate(360deg)}
 }
 @keyframes pet-jump {
-  0%{transform:translateY(0)}
-  40%{transform:translateY(-30px)}
-  80%{transform:translateY(6px)}
-  100%{transform:translateY(0)}
+0%{transform:translateY(0)}
+40%{transform:translateY(-30px)}
+80%{transform:translateY(6px)}
+100%{transform:translateY(0)}
+}
+@keyframes fade-in{
+from{opacity:0;transform:translateY(10px)}
+to{opacity:1;transform:translateY(0)}
+}
+@keyframes pulse-glow{
+0%,100%{box-shadow:0 0 10px rgba(124,87,246,0.3)}
+50%{box-shadow:0 0 25px rgba(124,87,246,0.55)}
 }
 
-/* play buttons */
-.play-controls{display:flex;flex-direction:column;gap:8px}
-.control-row{display:flex;gap:8px;align-items:center}
-
-/* breed grid */
-.breed-grid{display:flex;gap:12px;align-items:center;justify-content:center}
-.breed-card{cursor:pointer;border-radius:12px;padding:8px;border:2px solid transparent;text-align:center}
-.breed-card.selected{border-color:rgba(124,87,246,0.18);box-shadow:0 8px 20px rgba(124,87,246,0.06);background:var(--soft)}
-
-/* music control */
-.music-bar{display:flex;align-items:center;gap:8px}
-.music-button{background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px;border-radius:8px}
+/* =========================================
+10. Scrollbar & helpers
+========================================= */
+::-webkit-scrollbar{width:10px}
+::-webkit-scrollbar-thumb{background:#bcd8f8;border-radius:5px}
+@media (max-width:700px){
+.container{padding:0 12px}
+body{padding:20px}
+.pet-stage{width:100%;height:200px}
+}
