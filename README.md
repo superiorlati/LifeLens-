@@ -79,3 +79,4 @@ LifeLens will continue to evolve until every user can have an AI companion that 
 <img width="991" height="640" alt="Screenshot 2025-10-27 024435" src="https://github.com/user-attachments/assets/e2c3c079-d186-4bbb-ba5e-b611ea63e426" />
 <img width="973" height="647" alt="Screenshot 2025-10-27 022149" src="https://github.com/user-attachments/assets/ab0ea81c-31f7-4768-93cf-2c6a466f2049" />
 <img width="1667" height="938" alt="Screenshot 2025-10-27 015547" src="https://github.com/user-attachments/assets/04e1dd5a-3170-4f42-9c80-a663e27eae6f" />
+
