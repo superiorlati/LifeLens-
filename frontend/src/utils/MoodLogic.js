@@ -1,21 +1,20 @@
 // frontend/src/utils/moodLogic.js
-
 /**
- * moodLogic.js — central intelligence for emotion & persona adaptation
+ * moodLogic.js — central intelligence for emotional adaptation
  *
  * Features:
- * ✅ Analyzes journal text or voice transcript for mood/emotion
- * ✅ Returns normalized mood labels: calm, happy, sad, overwhelmed, grateful, inspired
- * ✅ Suggests persona tone adjustments based on user emotional state
- * ✅ Supports “auto-suggest mode switch” for emotional adaptation
- * ✅ Used by: JournalPanel, CoachPanel, PersonaBadge, Dashboard
+ * ✅ Analyzes journal or habit reflection text for mood/emotion
+ * ✅ Returns normalized mood labels: calm, happy, sad, overwhelmed, inspired
+ * ✅ Suggests tone adjustments (supportive, reflective, energetic) — no personas
+ * ✅ Used by: JournalPanel, CoachPanel, Dashboard, SuggestionEngine
  *
  * Exported functions:
  *  - analyzeMood(text)
- *  - suggestPersonaSwitch(mood, currentPersona)
+ *  - suggestToneAdjustment(mood)
  *  - getMoodColor(mood)
  *  - getMoodEmoji(mood)
  *  - getMoodMessage(mood)
+ *  - interpretJournalEntry(entryText)
  */
 
 //////////////////////////
@@ -27,60 +26,52 @@ export function analyzeMood(text = "") {
 
   const lower = text.toLowerCase();
 
-  // keyword categories
-  const happyWords = ["grateful", "thankful", "excited", "joy", "love", "great", "happy", "optimistic", "hopeful"];
-  const sadWords = ["sad", "tired", "alone", "disappointed", "upset", "cry", "lost", "heartbroken"];
-  const stressedWords = ["overwhelmed", "anxious", "worried", "stressed", "panic", "pressure", "burnt"];
-  const calmWords = ["calm", "peaceful", "relaxed", "serene", "content"];
-  const inspiredWords = ["inspired", "creative", "determined", "motivated", "focused"];
-  const angryWords = ["angry", "frustrated", "furious", "irritated", "mad"];
+  const happyWords = [
+    "grateful", "thankful", "excited", "joy", "love", "great", "happy", "optimistic", "hopeful"
+  ];
+  const sadWords = [
+    "sad", "tired", "alone", "disappointed", "upset", "cry", "lost", "heartbroken"
+  ];
+  const stressedWords = [
+    "overwhelmed", "anxious", "worried", "stressed", "panic", "pressure", "burnt", "busy"
+  ];
+  const calmWords = [
+    "calm", "peaceful", "relaxed", "serene", "content"
+  ];
+  const inspiredWords = [
+    "inspired", "creative", "determined", "motivated", "focused", "productive"
+  ];
+  const angryWords = [
+    "angry", "frustrated", "furious", "irritated", "mad"
+  ];
 
-  // basic sentiment scoring
-  const score = {
-    happy: happyWords.some(w => lower.includes(w)),
-    sad: sadWords.some(w => lower.includes(w)),
-    stressed: stressedWords.some(w => lower.includes(w)),
-    calm: calmWords.some(w => lower.includes(w)),
-    inspired: inspiredWords.some(w => lower.includes(w)),
-    angry: angryWords.some(w => lower.includes(w)),
-  };
+  const match = (words) => words.some((w) => lower.includes(w));
 
-  if (score.happy || score.inspired) return "happy";
-  if (score.sad) return "sad";
-  if (score.stressed || score.angry) return "overwhelmed";
-  if (score.calm) return "calm";
-  if (score.inspired) return "inspired";
+  if (match(happyWords) || match(inspiredWords)) return "happy";
+  if (match(sadWords)) return "sad";
+  if (match(stressedWords) || match(angryWords)) return "overwhelmed";
+  if (match(calmWords)) return "calm";
+  if (match(inspiredWords)) return "inspired";
 
   return "neutral";
 }
 
 //////////////////////////
-// 🔹 Persona Auto-Suggestion
+// 🔹 Tone Adaptation (no personas)
 //////////////////////////
 
-export function suggestPersonaSwitch(mood, currentPersona) {
-  // Suggest switching tone based on emotional distress
-  const emotionalMap = {
-    overwhelmed: ["kind", "patient", "supporter"],
-    sad: ["kind", "inspirational"],
-    angry: ["reflector", "analytical"],
-    calm: ["analytical", "neutral"],
-    happy: ["playful", "fun"],
-    inspired: ["inspirational", "motivator"],
+export function suggestToneAdjustment(mood) {
+  // Instead of persona switching, we give tone recommendations for the AI coach.
+  const toneMap = {
+    happy: { tone: "energetic", message: "Keep up the momentum! Let’s channel your good mood into small wins." },
+    sad: { tone: "gentle", message: "You’re feeling low — let’s focus on kindness and one small step today." },
+    overwhelmed: { tone: "supportive", message: "You might be under pressure. Let’s simplify things and start small." },
+    calm: { tone: "reflective", message: "You’re calm and centered — a perfect mindset for focus or gratitude." },
+    inspired: { tone: "motivational", message: "You’re inspired — let’s turn that spark into action." },
+    neutral: { tone: "balanced", message: "You’re steady — we can go either way depending on your goals." },
   };
 
-  const recommended = emotionalMap[mood] || [];
-  const shouldSuggestSwitch =
-    (mood === "overwhelmed" || mood === "sad") &&
-    !recommended.includes(currentPersona);
-
-  return {
-    shouldSuggestSwitch,
-    recommended,
-    message: shouldSuggestSwitch
-      ? `You seem ${mood} — would you like your AI coach to switch to a more ${recommended[0]} and ${recommended[1] || "soothing"} tone?`
-      : "",
-  };
+  return toneMap[mood] || toneMap["neutral"];
 }
 
 //////////////////////////
@@ -115,13 +106,12 @@ export function getMoodEmoji(mood = "neutral") {
 
 export function getMoodMessage(mood = "neutral") {
   const messages = {
-    neutral: "You're steady and balanced today.",
-    happy: "You seem upbeat! Keep that energy flowing.",
-    sad: "You're feeling low — take things slow and be gentle with yourself.",
-    calm: "You're at peace. This is a great time to focus or rest.",
-    overwhelmed: "It sounds like you're under pressure. Let’s take a deep breath together.",
-    grateful: "You're grateful — that's a powerful mindset!",
-    inspired: "You're inspired! Capture that spark before it fades.",
+    neutral: "You’re steady and balanced today.",
+    happy: "You seem upbeat! Let’s build on that energy.",
+    sad: "You’re feeling low — take things slow and be gentle with yourself.",
+    calm: "You’re at peace. This is a great time to focus or rest.",
+    overwhelmed: "It sounds like you’re under pressure. Let’s take a deep breath and simplify your next step.",
+    inspired: "You’re inspired! Let’s capture that spark and make progress.",
   };
   return messages[mood] || "How are you feeling today?";
 }
@@ -130,9 +120,9 @@ export function getMoodMessage(mood = "neutral") {
 // 🔹 Combined Analysis Utility
 //////////////////////////
 
-export function interpretJournalEntry(entryText = "", currentPersona = "neutral") {
+export function interpretJournalEntry(entryText = "") {
   const mood = analyzeMood(entryText);
-  const suggestion = suggestPersonaSwitch(mood, currentPersona);
+  const toneSuggestion = suggestToneAdjustment(mood);
   const color = getMoodColor(mood);
   const emoji = getMoodEmoji(mood);
   const message = getMoodMessage(mood);
@@ -142,6 +132,16 @@ export function interpretJournalEntry(entryText = "", currentPersona = "neutral"
     color,
     emoji,
     message,
-    ...suggestion,
+    tone: toneSuggestion.tone,
+    toneMessage: toneSuggestion.message,
   };
 }
+
+export default {
+  analyzeMood,
+  suggestToneAdjustment,
+  getMoodColor,
+  getMoodEmoji,
+  getMoodMessage,
+  interpretJournalEntry,
+};

@@ -1,6 +1,7 @@
 // frontend/src/components/GroupPanel.jsx
 import React, { useEffect, useState } from "react";
 import { apiGet, apiPost } from "../api";
+import { addHabit, getHabits } from "../api";
 
 /**
  * GroupPanel — community support & accountability space 🌍

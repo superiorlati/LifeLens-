@@ -5,28 +5,18 @@ import HabitsList from "./HabitsList";
 import NudgePanel from "./NudgePanel";
 import PetPanel from "./PetPanel";
 import AvatarPicker from "./AvatarPicker";
-import PersonaBadge from "./PersonaBadge";
-import { apiGet, apiPost } from "../api";
+import AddHabitForm from "./AddHabitForm";
+import { apiGet } from "../api";
 import "../index.css";
 
 /**
  * Dashboard.jsx
  *
- * A single, integrated dashboard view that:
- *  - loads the user's habits and computes daily completion status
- *  - shows CoachPanel, HabitsList, NudgePanel and PetPanel
- *  - keeps all existing functionality from the App.jsx inline dashboard
+ * Unified dashboard view showing:
+ *  - User greeting and progress
+ *  - Habits, adaptive nudges, and pet interaction
  *
- * Props:
- *  - user: { id, name, persona } (required)
- *  - pet: { type } or string (optional)
- *  - onPetChosen(petObj) - called when user picks/changes a pet (optional)
- *  - onOpenHabit(habit) - open habit details (optional)
- *  - onNavigate(page) - navigate (e.g. "playroom") (optional)
- *  - onLogout() - optional logout handler
- *
- * This component mirrors the logic previously in App.jsx so you can either
- * use the component inside App.jsx or swap the dashboard area with this.
+ * Personas have been removed — AI adapts to habits dynamically.
  */
 
 export default function Dashboard({
@@ -41,12 +31,14 @@ export default function Dashboard({
   const [selectedHabit, setSelectedHabit] = useState(null);
   const [food, setFood] = useState(0);
   const [toys, setToys] = useState(0);
-  const [dailyStatus, setDailyStatus] = useState({}); // habitId -> bool
+  const [dailyStatus, setDailyStatus] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const audioRef = useRef(null);
 
-  // fetch user's habits
+  // ----------------------------
+  // Fetch habits for user
+  // ----------------------------
   const fetchHabits = useCallback(
     async (u = user) => {
       if (!u) return;
@@ -66,11 +58,12 @@ export default function Dashboard({
   );
 
   useEffect(() => {
-    if (!user) return;
-    fetchHabits();
+    if (user) fetchHabits();
   }, [user, fetchHabits]);
 
-  // check if a habit has been completed today
+  // ----------------------------
+  // Daily completion tracking
+  // ----------------------------
   async function habitCompletedToday(userId, habitId) {
     try {
       const r = await apiGet(`/logs?user_id=${userId}&habit_id=${habitId}`);
@@ -88,7 +81,6 @@ export default function Dashboard({
     }
   }
 
-  // recompute dailyStatus (and award toy if all done)
   async function recomputeDailyStatus() {
     if (!user) return;
     const status = {};
@@ -104,17 +96,17 @@ export default function Dashboard({
     }
   }
 
-  // recompute when habits change or on mount
   useEffect(() => {
     if (habits.length > 0) recomputeDailyStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [habits]);
 
-  // Called by child panels (CoachPanel / NudgePanel) after they log a habit
-  // Accepts the same payloads previous handlers used: { success, habit_id } or similar
+  // ----------------------------
+  // Habit logging + refresh hooks
+  // ----------------------------
   async function handleLogFromPanels(payload = {}) {
     const success = payload.success;
-    if (success === 1) {
+    if (success === 1 || Number(success) === 1) {
       setFood((f) => f + 1);
       await fetchHabits();
       await recomputeDailyStatus();
@@ -123,7 +115,9 @@ export default function Dashboard({
     }
   }
 
-  // Quick UI helpers
+  // ----------------------------
+  // Misc UI actions
+  // ----------------------------
   function toggleMusic() {
     if (!audioRef.current) audioRef.current = document.getElementById("bg-music");
     if (!audioRef.current) return;
@@ -140,11 +134,14 @@ export default function Dashboard({
   function handleFeed() {
     setFood((f) => f + 1);
   }
+
   function handleGiveToy() {
     setToys((t) => t + 1);
   }
 
-  // Render guard
+  // ----------------------------
+  // Render
+  // ----------------------------
   if (!user) {
     return (
       <div className="card">
@@ -162,7 +159,7 @@ export default function Dashboard({
           <div>
             <strong>Welcome, {user.name}</strong>
             <div className="small">
-              Persona: <PersonaBadge persona={user.persona} /> • Food: {food} 🍖 • Toys: {toys} 🧸
+              Food: {food} 🍖 • Toys: {toys} 🧸
             </div>
           </div>
 
@@ -243,11 +240,10 @@ export default function Dashboard({
                 /* allow quick swap of pet type inline */
                 const next = prompt("Pick a pet emoji or type (e.g. dog, cat, 🐶):");
                 if (next) {
-                  // prefer type strings (dog/cat) if user typed them; otherwise pass as emoji string
                   if (next.length <= 4 && /^[a-z_]+$/i.test(next)) {
                     handlePetPick({ type: next.toLowerCase() });
                   } else {
-                    handlePetPick(next); // emoji string
+                    handlePetPick(next);
                   }
                 }
               }}
@@ -266,3 +262,6 @@ export default function Dashboard({
     </div>
   );
 }
+// ------------------------------------------------------------
+// End of Dashboard.jsx
+// ------------------------------------------------------------

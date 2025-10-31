@@ -2,15 +2,22 @@ import React, { useState, useRef } from "react";
 
 /**
 
-AvatarPicker — swipe or scroll to pick from a range of animal companions.
+AvatarPicker — swipe or scroll to pick from a range of animal companions 🐾
 
-Shows emoji avatars in a horizontal carousel.
+✅ Horizontal emoji carousel with scroll snapping
 
-Calls onSelect({ type }) when an animal is chosen.
+✅ Calls onSelect({ type }) when an animal is chosen
+
+✅ Includes live preview area
+
+✅ Accessible and responsive
+
+✅ Subtle animation + consistent design with LifeLens visuals
 */
+
 export default function AvatarPicker({ onSelect }) {
 const [selected, setSelected] = useState(null);
-const scrollRef = useRef();
+const scrollRef = useRef(null);
 
 const animals = [
 { type: "dog", emoji: "🐶", label: "Dog" },
@@ -37,16 +44,18 @@ const animals = [
 
 const handlePick = (type) => {
 setSelected(type);
-if (onSelect) onSelect({ type });
+onSelect?.({ type });
 };
 
 return (
-<div className="avatar-picker">
-<div className="small">Pick your companion</div>
+<div className="avatar-picker" style={{ textAlign: "center" }}>
+<div className="small" style={{ fontWeight: 600 }}>
+Pick your companion
+</div>
 
   <div
-    className="avatar-scroll"
     ref={scrollRef}
+    className="avatar-scroll"
     style={{
       display: "flex",
       gap: "16px",
@@ -54,36 +63,48 @@ return (
       scrollSnapType: "x mandatory",
       padding: "12px 0",
       marginTop: "8px",
+      WebkitOverflowScrolling: "touch",
     }}
   >
     {animals.map((a) => (
-      <div
+      <button
         key={a.type}
-        className={`breed-card ${selected === a.type ? "selected" : ""}`}
         onClick={() => handlePick(a.type)}
+        aria-label={`Choose ${a.label}`}
+        className={`breed-card ${selected === a.type ? "selected" : ""}`}
         style={{
           flex: "0 0 auto",
           scrollSnapAlign: "center",
           textAlign: "center",
           cursor: "pointer",
           minWidth: "90px",
-          background: selected === a.type ? "var(--soft)" : "transparent",
+          background: selected === a.type ? "var(--soft, #f5f3ff)" : "transparent",
           border:
             selected === a.type
-              ? "2px solid rgba(124,87,246,0.3)"
+              ? "2px solid rgba(124,87,246,0.4)"
               : "2px solid transparent",
           borderRadius: "12px",
           padding: "10px 6px",
-          transition: "all 0.3s ease",
+          transition: "all 0.25s ease",
+          outline: "none",
         }}
       >
-        <div style={{ fontSize: 46, marginBottom: 4 }}>{a.emoji}</div>
+        <div
+          style={{
+            fontSize: 46,
+            marginBottom: 4,
+            transform: selected === a.type ? "scale(1.1)" : "scale(1)",
+            transition: "transform 0.25s ease",
+          }}
+        >
+          {a.emoji}
+        </div>
         <div className="small">{a.label}</div>
-      </div>
+      </button>
     ))}
   </div>
 
-  <div style={{ marginTop: 24, textAlign: "center" }}>
+  <div style={{ marginTop: 24 }}>
     <div className="small">Preview</div>
     <div
       className="pet-stage"
@@ -96,15 +117,21 @@ return (
         justifyContent: "center",
         background: "linear-gradient(180deg, #fff, #f9f9ff)",
         borderRadius: 16,
-        boxShadow: "var(--shadow)",
+        boxShadow: "var(--shadow, 0 4px 12px rgba(0,0,0,0.1))",
       }}
     >
       {selected ? (
-        <div style={{ fontSize: 72, transition: "transform 0.4s ease" }}>
+        <div
+          style={{
+            fontSize: 72,
+            transform: "scale(1)",
+            transition: "transform 0.4s ease",
+          }}
+        >
           {animals.find((a) => a.type === selected)?.emoji}
         </div>
       ) : (
-        <div style={{ fontSize: 36 }}>🐾</div>
+        <div style={{ fontSize: 36, opacity: 0.7 }}>🐾</div>
       )}
     </div>
   </div>

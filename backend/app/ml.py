@@ -1,88 +1,200 @@
-# ml.py -- feature extraction, training, and lightweight inference for LifeLens prototype
+# backend/app/main.py
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+import asyncio
+from datetime import datetime
 
-import numpy as np
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
-from datetime import datetime, timedelta
-from .db import get_conn, save_model, load_model_spec
+from . import crud, models, schemas, ai
+from .database import engine, SessionLocal
+from .models import create_all as models_create_all
 
-def gather_features_labels(user_id: str, min_days: int = 1):
-    """
-    For each habit of the user, collect recent logs and compute simple features:
-      - streak: consecutive trailing successes (int)
-      - mean_success: proportion of successes in window [0,14] days
-      - recency_hours: hours since last log
-    Label: heuristic 1 if last log occurred within 24 hours (proxy for 'continued engagement'), else 0.
-    Returns: X (n x 3), y (n)
-    """
-    conn = get_conn(); cur = conn.cursor()
-    cur.execute("SELECT id FROM habits WHERE user_id = ?", (user_id,))
-    habit_rows = cur.fetchall()
-    X = []; y = []
-    for (habit_id,) in habit_rows:
-        cur.execute("SELECT timestamp, success FROM logs WHERE user_id = ? AND habit_id = ? ORDER BY timestamp ASC",
-                    (user_id, habit_id))
-        rows = cur.fetchall()
-        if not rows:
-            continue
-        # consider last 14 days
-        cutoff = datetime.utcnow() - timedelta(days=14)
-        recent = [(datetime.fromisoformat(ts), s) for (ts, s) in rows if datetime.fromisoformat(ts) > cutoff]
-        if not recent:
-            continue
-        successes = [s for (_, s) in recent]
-        # streak: count consecutive trailing 1s
-        streak = 0
-        for s in reversed(successes):
-            if s == 1:
-                streak += 1
-            else:
-                break
-        mean_success = float(np.mean(successes))
-        recency_hours = (datetime.utcnow() - recent[-1][0]).total_seconds() / 3600.0
-        label = 1 if recent[-1][0] > datetime.utcnow() - timedelta(hours=24) else 0
-        X.append([streak, mean_success, recency_hours])
-        y.append(label)
-    conn.close()
-    if not X:
-        return None, None
-    return np.array(X, dtype=float), np.array(y, dtype=int)
+app = FastAPI(title="LifeLens Prototype API")
 
-def train_user_model(user_id: str, min_samples: int = 5):
-    """
-    Train logistic regression if enough samples exist. Save scaler & serialized model params to DB.
-    Returns True if trained, False otherwise.
-    """
-    X, y = gather_features_labels(user_id)
-    if X is None or len(X) < min_samples:
-        return False
-    scaler = StandardScaler()
-    Xs = scaler.fit_transform(X)
-    model = LogisticRegression(max_iter=200)
-    model.fit(Xs, y)
-    # serialize model parameters
-    model_spec = {"coef": model.coef_.tolist(), "intercept": model.intercept_.tolist(), "classes": model.classes_.tolist()}
-    scaler_spec = {"mean": scaler.mean_.tolist(), "scale": scaler.scale_.tolist()}
-    save_model(user_id, scaler_spec, model_spec)
-    return True
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-def make_predictor(user_id: str):
-    """
-    Return a function predictor(features_vector) -> probability in [0,1],
-    or None if no model saved for user.
-    """
-    spec = load_model_spec(user_id)
-    if not spec:
-        return None
-    scaler = spec["scaler"]
-    model = spec["model"]
-    mean = np.array(scaler["mean"], dtype=float)
-    scale = np.array(scaler["scale"], dtype=float)
-    coef = np.array(model["coef"], dtype=float).reshape(-1)
-    intercept = float(model["intercept"][0])
-    def predict(feature_vector):
-        x = (np.array(feature_vector, dtype=float) - mean) / scale
-        z = float(np.dot(coef, x) + intercept)
-        prob = 1.0 / (1.0 + np.exp(-z))
-        return float(prob)
-    return predict
+@app.on_event("startup")
+async def startup():
+    models_create_all(engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# -------------------------
+# Create user
+# -------------------------
+@app.post("/api/create_user", response_model=schemas.CreateUserRes)
+async def create_user(req: schemas.CreateUserReq, db: Session = Depends(get_db)):
+    user_id = crud.create_user(db, req)
+    # optional background training
+    loop = asyncio.get_event_loop()
+    loop.create_task(asyncio.to_thread(ai.make_predictor, user_id))
+    return {"user_id": user_id}
+
+# -------------------------
+# Add habit
+# -------------------------
+@app.post("/api/add_habit", response_model=schemas.HabitRes)
+async def add_habit(req: schemas.AddHabitReq, db: Session = Depends(get_db)):
+    habit = crud.add_habit(db, req)
+    return {"id": habit.id, "name": habit.name, "target_per_day": habit.target_per_day}
+
+# -------------------------
+# List habits
+# -------------------------
+@app.get("/api/habits", response_model=schemas.HabitListRes)
+async def get_habits(user_id: str, db: Session = Depends(get_db)):
+    habits = crud.list_habits(db, user_id)
+    return {"habits": [{"id": h.id, "name": h.name, "target_per_day": h.target_per_day} for h in habits]}
+
+# -------------------------
+# Logging events
+# -------------------------
+@app.post("/api/log")
+async def log_event(req: schemas.LogReq, db: Session = Depends(get_db)):
+    crud.log_event(db, req)
+    loop = asyncio.get_event_loop()
+    loop.create_task(asyncio.to_thread(ai.make_predictor, req.user_id))
+    return {"status": "ok"}
+
+@app.get("/api/logs", response_model=schemas.LogListRes)
+async def get_logs(user_id: str, habit_id: str, limit: int = 100, db: Session = Depends(get_db)):
+    logs = crud.get_logs(db, user_id, habit_id, limit)
+    return {"logs": [{"timestamp": l.timestamp, "success": l.success} for l in logs]}
+
+# -------------------------
+# Diary
+# -------------------------
+@app.post("/api/diary", response_model=schemas.DiaryEntryRes)
+async def add_diary_entry(req: schemas.DiaryEntryReq, db: Session = Depends(get_db)):
+    entry = crud.add_diary_entry(db, req)
+    return {
+        "id": entry.id,
+        "user_id": entry.user_id,
+        "title": entry.title,
+        "text": entry.text,
+        "mood": entry.mood,
+        "audio_path": entry.audio_path,
+        "created_at": entry.created_at,
+    }
+
+@app.get("/api/diary", response_model=schemas.DiaryListRes)
+async def list_diary(user_id: str, limit: int = 50, db: Session = Depends(get_db)):
+    entries = crud.list_diary_entries(db, user_id, limit)
+    out = []
+    for e in entries:
+        out.append({
+            "id": e.id,
+            "user_id": e.user_id,
+            "title": e.title,
+            "text": e.text,
+            "mood": e.mood,
+            "audio_path": e.audio_path,
+            "created_at": e.created_at,
+        })
+    return {"entries": out}
+
+# -------------------------
+# Groups
+# -------------------------
+@app.post("/api/create_group", response_model=schemas.GroupRes)
+async def create_group(req: schemas.CreateGroupReq, db: Session = Depends(get_db)):
+    g = crud.create_group(db, req)
+    return {"id": g.id, "name": g.name, "description": g.description}
+
+@app.get("/api/groups")
+async def list_groups(db: Session = Depends(get_db)):
+    groups = crud.list_groups(db)
+    return {"groups": [{"id": g.id, "name": g.name, "description": g.description} for g in groups]}
+
+@app.post("/api/join_group")
+async def join_group(req: schemas.JoinGroupReq, db: Session = Depends(get_db)):
+    membership = crud.join_group(db, req)
+    return {"id": membership.id, "user_id": membership.user_id, "group_id": membership.group_id}
+
+@app.get("/api/user_groups")
+async def user_groups(user_id: str, db: Session = Depends(get_db)):
+    groups = crud.list_user_groups(db, user_id)
+    return {"groups": [{"id": g.id, "name": g.name, "description": g.description} for g in groups]}
+
+# -------------------------
+# Pet state
+# -------------------------
+@app.get("/api/pet_state", response_model=schemas.PetStateRes)
+async def pet_state(user_id: str, db: Session = Depends(get_db)):
+    pet = crud.get_pet_state(db, user_id)
+    return {
+        "user_id": pet.user_id,
+        "mood": pet.mood,
+        "hunger": pet.hunger,
+        "energy": pet.energy,
+        "affection": pet.affection,
+        "last_updated": pet.last_updated,
+    }
+
+@app.post("/api/pet_state")
+async def update_pet(user_id: str, updates: dict, db: Session = Depends(get_db)):
+    pet = crud.update_pet_state(db, user_id, updates)
+    return {"user_id": pet.user_id, "mood": pet.mood, "hunger": pet.hunger, "energy": pet.energy, "affection": pet.affection}
+
+# -------------------------
+# Prediction / Nudge (adaptive)
+# -------------------------
+def generate_adaptive_nudge(habit_name: str, p: float, style: str):
+    return ai.generate_adaptive_nudge_text(habit_name, p, style)
+
+@app.get("/api/predict", response_model=schemas.NudgeRes)
+async def predict(user_id: str, habit_id: str, db: Session = Depends(get_db)):
+    user = crud.get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="user not found")
+
+    habit = crud.get_habit(db, habit_id)
+    if not habit:
+        raise HTTPException(status_code=404, detail="habit not found")
+
+    logs = crud.get_logs(db, user_id, habit_id, limit=200)
+    if not logs:
+        msg = f"Let’s begin building your '{habit.name}' routine — start small and be consistent."
+        return {"message": msg, "probability": 0.5, "style_used": user.style}
+
+    successes = [l.success for l in reversed(logs)]
+    streak = 0
+    for s in successes:
+        if s == 1:
+            streak += 1
+        else:
+            break
+    mean_success = float(sum(successes) / len(successes)) if successes else 0.0
+
+    recency_hours = (datetime.utcnow() - logs[0].timestamp).total_seconds() / 3600.0
+
+    # simple features; if a predictor exists, ai.make_predictor returns callable
+    predictor = ai.make_predictor(user.id)
+    if predictor:
+        p = predictor([streak, mean_success, recency_hours])
+    else:
+        if mean_success > 0.6 and streak >= 2:
+            p = 0.85
+        elif mean_success > 0.4:
+            p = 0.55
+        else:
+            p = 0.25
+
+    msg = generate_adaptive_nudge(habit.name, p, user.style)
+    return {"message": msg, "probability": float(p), "style_used": user.style}

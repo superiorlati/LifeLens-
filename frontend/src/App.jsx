@@ -7,9 +7,9 @@ import CoachPanel from "./components/CoachPanel";
 import AvatarPicker from "./components/AvatarPicker";
 import PetPanel from "./components/PetPanel";
 import PersonaBadge from "./components/PersonaBadge";
-import PersonaSetup from "./components/PersonaSetup"; // new: onboarding persona selector
-import JournalPanel from "./components/JournalPanel"; // new: journaling / voice notes
-import GroupPanel from "./components/GroupPanel"; // new: group accountability view
+import PersonaSetup from "./components/PersonaSetup"; // onboarding persona selector (kept)
+import JournalPanel from "./components/JournalPanel"; // journaling / voice notes
+import GroupPanel from "./components/GroupPanel"; // group accountability view
 import { apiGet } from "./api";
 import "./index.css";
 
@@ -23,13 +23,7 @@ import "./index.css";
  *  - journal: write / voice journaling
  *  - groups: group accountability
  *
- * This file preserves ALL existing features the app had previously
- * (habit fetching, logging hooks, playroom, coach panel, audio toggle, etc.)
- * while adding:
- *  - persona selection at onboarding (and editable in-settings via header)
- *  - journal & group panels accessible from dashboard
- *  - mood state driving background color and pet emotion
- *  - place to toggle background music (audio element expected in public/assets)
+ * All existing features preserved (habit fetching, logging hooks, playroom, coach panel, audio toggle, etc.)
  */
 
 export default function App() {
@@ -82,7 +76,8 @@ export default function App() {
       return logs.some((l) => {
         if (!l.timestamp) return false;
         const t = new Date(l.timestamp);
-        return t >= start && l.success === 1;
+        // robust check converting success to number in case backend returned "1"
+        return t >= start && Number(l.success) === 1;
       });
     } catch (e) {
       console.error("Error checking habit completion", e);
@@ -93,7 +88,10 @@ export default function App() {
   async function recomputeDailyStatus() {
     if (!user) return;
     const status = {};
+    // ensure we use the latest habits array
     for (const h of habits) {
+      // defensive: skip if habit or user id missing
+      if (!h || !h.id) continue;
       status[h.id] = await habitCompletedToday(user.id, h.id);
     }
     setDailyStatus(status);
@@ -122,7 +120,7 @@ export default function App() {
   }
 
   async function handleLogFromPanels({ success } = {}) {
-    if (success === 1) {
+    if (success === 1 || Number(success) === 1) {
       onHabitLoggedSuccess();
     } else {
       setMood("sad");
@@ -144,7 +142,7 @@ export default function App() {
   }
 
   function handlePetChosen(petObj) {
-    // expected petObj: { type: 'dog' | 'cat' | 'rabbit' | ... }
+    // expected petObj: { type: 'dog' | 'cat' | 'rabbit' | ... } or emoji/string
     setPet(petObj);
     setPage("dashboard");
     // small delay so habits can load then evaluate mood
@@ -367,11 +365,14 @@ export default function App() {
           <div style={{ marginTop: 12 }}>
             <JournalPanel
               user={user}
-              persona={persona}
-              onInsight={(insight) => {
-                // journal returned insight could influence mood/persona suggestions
-                if (insight?.mood === "distressed") {
+              onMoodChange={(m) => {
+                // journal returned mood could influence mood/persona suggestions
+                if (m === "overwhelmed") {
                   setMood("sad");
+                  setPersona("kind");
+                } else if (m === "happy") {
+                  setMood("happy");
+                  // keep persona as-is or nudge
                 }
               }}
               onDone={() => setPage("dashboard")}
