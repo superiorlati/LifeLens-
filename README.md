@@ -39,7 +39,7 @@ Open the frontend (usually `http://localhost:3000`) and interact.
 ## NAME: LifeLens
 
 ## My elevator pitch: 
-An AI powered habit coaching app and emotional pet companion designed to make self-improvement joyful. Utilising mental health and personalised responses this app aims to combat negative feelings.
+An AI powered habit coach and pet companion designed to make self improvement enjoyable and kill procrastination. Built by someone who struggles with motivation and self help, for people just like me.
 
 ## Inspiration
 I have always been fascinated by how technology can feel. As someone with ADHD, I have tried dozens of habit apps that promised structure but left me feeling disconnected, like I was just checking boxes for a robot. I wanted something that felt alive. That is how LifeLens was born: an AI-powered habit coach and emotional pet companion that turns discipline into something warm, joyful, and human.
