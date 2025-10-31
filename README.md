@@ -42,25 +42,35 @@ Open the frontend (usually `http://localhost:3000`) and interact.
 An AI powered habit coaching app and emotional pet companion designed to make self-improvement joyful. Utilising mental health and personalised responses this app aims to combat negative feelings.
 
 ## Inspiration
-I’ve always been fascinated by how technology can feel. As someone with ADHD, I’ve tried dozens of habit apps that promised structure but left me feeling disconnected; like I was just checking boxes for a robot. I wanted something that felt alive. That’s how LifeLens was born; an AI-powered habit coach and emotional pet companion that turns discipline into something warm, joyful, and human.
+I have always been fascinated by how technology can feel. As someone with ADHD, I have tried dozens of habit apps that promised structure but left me feeling disconnected, like I was just checking boxes for a robot. I wanted something that felt alive. That is how LifeLens was born: an AI-powered habit coach and emotional pet companion that turns discipline into something warm, joyful, and human.
 
 ## What it does
-LifeLens helps users build better habits through emotion and empathy. It predicts which habits you might struggle with, offers personalized feedback based on your emotional persona, and celebrates progress with your virtual pet - whose mood and environment change with your actions. It’s like if Duolingo, a life coach, and a mental wellness buddy all merged into one playful app.
+LifeLens helps users build better habits through emotion and empathy. It predicts which habits you might struggle with, offers personalized feedback based on your emotional persona, and celebrates progress with your virtual pet, whose mood and environment change with your actions. It combines behavioral science with emotional intelligence to create a deeply personal experience. LifeLens is like if Duolingo, a life coach, and a mental wellness companion all merged into one app.
+
+But LifeLens goes further. It uses a Personalized Continuous Emotional Model that learns from your tone, habits, and reflections to adapt its coaching style in real time. The Adaptive Micro-Task Composer breaks big goals into small, manageable steps based on your current energy level. A Multimodal Habit Predictor identifies when you are likely to fall behind and offers preemptive, context-aware support. Together, these features make LifeLens feel truly alive.
 
 ## How we built it
-I built LifeLens’s front end in React, creating a smooth, color-shifting interface that reflects mood and progress. The coach logic connects to an AI-assisted prediction model through a backend API, learning from user patterns and offering targeted feedback. I designed the pet system using emoji “companions” that react in real time, building emotional engagement through visuals and microinteractions. Every line of code, from the background color transitions to the persona-based tone system, was meant to feel intentional - not rushed.
+I built LifeLens’s front end using React, creating a smooth, color-shifting interface that visually represents mood and progress. The AI logic connects to a prediction model that learns from user data to provide tailored feedback and encouragement. The pet system is designed using expressive emoji companions that react instantly to your behavior, creating emotional feedback loops that help users stay motivated. Every design choice, from soft pastels to rounded typography, was made to create a sense of calm and care.
+
+I also implemented a persona-based tone system that changes how the AI communicates, depending on whether the user prefers an encouraging, analytical, or challenging style. Each of these systems works together to make LifeLens feel emotionally aware rather than mechanical.
 
 ## Challenges we ran into
-This project definitely tested me. I ran into countless small but painful bugs; missing curly braces, mismatched imports, and one stubborn API call that refused to cooperate. Even just getting the app to launch correctly was a challenge at first. But the hardest part wasn’t fixing syntax — it was learning how to bring everything I’d ever learned about coding, design, and psychology together into one cohesive, functioning prototype. Seeing it finally run, with everything connected and alive, was the most rewarding moment of all.
+Building LifeLens was not easy. I encountered countless small but time-consuming bugs, from missing imports to broken asynchronous calls. At one point, habits would not even save properly, and debugging that took hours. But the hardest part was not the syntax; it was bringing everything I had ever learned about coding, design, and psychology together into one cohesive, functioning prototype. Making it all run smoothly while feeling emotionally responsive tested every skill I had. Seeing it finally come to life felt amazing.
 
-## Accomplishments that we’re proud of
-LifeLens actually works; it doesn’t just track habits, it responds emotionally. Seeing the pet change mood and the app background shift based on my progress was an incredible moment. I’m proud that it feels like something alive, something comforting. And I’m proud that I built most of it by blending code, design, psychology, and AI to create something that genuinely supports people like me.
+## Accomplishments that we are proud of
+LifeLens actually works. It does not just track habits; it responds to them. When your pet’s mood shifts, your background color changes, and your AI coach adapts its tone, it feels like the app truly understands you. I am proud that LifeLens feels alive and comforting. It blends code, design, psychology, and AI into a single experience that can genuinely support people like me who struggle to stay motivated or emotionally connected to routine.
 
 ## What we learned
-I learned how powerful emotional design is. That people don’t just need productivity tools; they need connection. I also learned how to integrate AI in ways that support human emotion, not replace it. On the technical side, I improved at handling asynchronous calls in React and learned to design clean, intuitive UX that communicates mood. But the biggest lesson was personal; that coding for something you are passionate about really is the best thing for someone
+I learned that emotional design can be more powerful than pure productivity. People do not just need systems to manage habits; they need empathy and connection. I also learned how to use AI responsibly to support emotional well-being, rather than replace it. On the technical side, I improved my ability to manage React states, handle asynchronous data flow, and build dynamic, intuitive UI systems. The biggest lesson, though, was that passion truly transforms code into something meaningful. Building LifeLens reminded me that technology can feel human if you design it with empathy.
 
-## What’s next for LifeLens
-There’s so much room to grow! I want to add animated pet sprites for a stronger emotional bond, customizable accessories for monetization, and smart notifications that feel caring instead of pushy. I also want to support multilingual coaching so LifeLens can reach users around the world. Long-term, I see LifeLens as part of a bigger mental wellness ecosystem; helping schools, workplaces, and individuals find emotional balance through technology that cares.
+## What is next for LifeLens
+There is so much potential ahead. I want to add animated pet sprites that move and emote, creating a deeper bond between user and companion. Custom accessories and virtual rewards will add personalization and monetization options. Smart notifications will feel gentle and personal rather than pushy.
+
+I plan to expand the AI features even further with the Personalized Continuous Emotional Model, Adaptive Micro-Task Composer, and Explainable AI Coaching that tells users exactly why certain nudges appear. I also aim to add multilingual coaching to make LifeLens accessible worldwide.
+
+Long-term, LifeLens will grow into a full emotional wellness ecosystem that supports schools, workplaces, and therapy programs. It will include Habit Co-ops where small groups can support one another, Adaptive Soundscapes that match mood and focus, and Automated Journaling that turns daily reflections into insight summaries.
+
+LifeLens will continue to evolve until every user can have an AI companion that learns, grows, and cares alongside them. The goal is simple but powerful: to make emotional wellness feel human again.
 
 ## ![IMG_7614](https://github.com/user-attachments/assets/bab6ab0d-84c8-4f14-95a1-acdd97ca80bf)
 <img width="1722" height="988" alt="Screenshot 2025-10-27 030309" src="https://github.com/user-attachments/assets/ad34224f-9de0-4cb8-8587-ca061cb4e9ac" />
